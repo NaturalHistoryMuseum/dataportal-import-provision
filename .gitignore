@@ -4,4 +4,6 @@
 # This folders are created when deploying a Vagrant VM
 /etc/
 /lib/
-/.vagrant
+/dataportal-import-provision/.vagrant
+/exports
+.vagrant
