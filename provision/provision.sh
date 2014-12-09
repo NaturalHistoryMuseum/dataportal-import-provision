@@ -6,6 +6,8 @@ PROVISION_COUNT=5 # Make sure to  update this when adding new updates!
 PROVISION_FOLDER=
 PROVISION_STEP=0
 
+DEV_MODE=1
+SYNCED_FOLDER=/vagrant
 CKAN_URL=
 API_KEY=
 
@@ -113,9 +115,21 @@ function provision_2(){
 function provision_3(){
 
   # Create virtual env
-  echo "Creating virtual environment"
-  mkdir -p /usr/lib/ckan/import
-  virtualenv /usr/lib/ckan/import
+
+
+  if [ ! -d /usr/lib/import ]; then
+    echo "Creating virtual environment"
+    mkdir -p /usr/lib/import
+    virtualenv /usr/lib/import
+  fi
+
+  # Symlinks (Development only)
+  if [ ${DEV_MODE} -eq 1 ]; then
+    echo "Setting up symlinks"
+    mkdir -p "${SYNCED_FOLDER}/lib"
+    ln -fs "${SYNCED_FOLDER}/lib" /usr/lib
+  fi
+
 }
 
 #
@@ -127,8 +141,8 @@ function provision_4(){
     exit 1
   fi
 
-  cd /usr/lib/ckan/import
-  . /usr/lib/ckan/import/bin/activate
+  cd /usr/lib/import
+  . /usr/lib/import/bin/activate
 
   pip install -e 'git+https://github.com/NaturalHistoryMuseum/ke2mongo.git#egg=ke2mongo'
 
@@ -138,7 +152,7 @@ function provision_4(){
   fi
 
   echo "Install KE2Mongo requirements"
-  pip_install_req /usr/lib/ckan/import/src/ke2mongo/requirements.txt
+  pip_install_req /usr/lib/import/src/ke2mongo/requirements.txt
 }
 
 #
@@ -153,7 +167,15 @@ function provision_5(){
     exit 1
   fi
 
- cat "$PROVISION_FOLDER/client.cfg" | sed -e "s~%CKAN_URL%~$CKAN_URL~"  -e "s~%API_KEY%~$API_KEY~" > /usr/lib/ckan/import/src/ke2mongo/ke2mongo/client.cfg
+ cat "$PROVISION_FOLDER/client.cfg" | sed -e "s~%CKAN_URL%~$CKAN_URL~"  -e "s~%API_KEY%~$API_KEY~" > /usr/lib/import/src/ke2mongo/ke2mongo/client.cfg
+}
+
+#
+# Initial provision, step 7: Set up logging
+#
+function provision_6(){
+  echo "Setting up logs"
+  sudo chmod 0777 /var/log
 }
 
 
@@ -174,6 +196,7 @@ elif [ "${PROVISION_VERSION}" -eq 0 ]; then
   provision_3
   provision_4
   provision_5
+  provision_6
   echo ${PROVISION_COUNT} > ${PROVISION_FILE}
 elif [ ${PROVISION_VERSION} -ge ${PROVISION_COUNT} ]; then
   echo "Server already provisioned"
