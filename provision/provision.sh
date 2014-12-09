@@ -153,7 +153,7 @@ function provision_5(){
     exit 1
   fi
 
- cat "$PROVISION_FOLDER/client.cfg" | sed -e "s~%CKAN_URL%~$CKAN_URL~"  -e "s~%API_KEY%~$API_KEY~" > /usr/lib/ckan/import/src/ke2mongo/client.cfg
+ cat "$PROVISION_FOLDER/client.cfg" | sed -e "s~%CKAN_URL%~$CKAN_URL~"  -e "s~%API_KEY%~$API_KEY~" > /usr/lib/ckan/import/src/ke2mongo/ke2mongo/client.cfg
 }
 
 
