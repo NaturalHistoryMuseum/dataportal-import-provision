@@ -6,10 +6,15 @@ PROVISION_COUNT=5 # Make sure to  update this when adding new updates!
 PROVISION_FOLDER=
 PROVISION_STEP=0
 
-DEV_MODE=1
+DEV_MODE=0
 SYNCED_FOLDER=/vagrant
 CKAN_URL=
 API_KEY=
+
+
+LUIGI_ERROR_EMAIL=
+LUIGI_EMAIL_SENDER=
+LUIGI_SMTP_HOST=
 
 #
 # usage() function to display script usage
@@ -152,18 +157,30 @@ function provision_4(){
 }
 
 #
-# Initial provision, step 5: Update and copy across the KE EMu config file
+# Initial provision, step 5: Update and copy across the KE EMu and Luigi config files
 #
 function provision_5(){
 
-  echo "Updating and installing client.cfg"
+  echo "Installing ke2mongo configuration file: config.cfg"
+
+  if [ ! -f "${PROVISION_FOLDER}/config.cfg" ]; then
+    echo "Missing file ${PROVISION_FOLDER}/config.cfg ; aborting." 1>&2
+    exit 1
+  fi
+
+  cat "$PROVISION_FOLDER/config.cfg" | sed -e "s~%CKAN_URL%~$CKAN_URL~"  -e "s~%API_KEY%~$API_KEY~" > /usr/lib/import/src/ke2mongo/ke2mongo/config.cfg
+
+  echo "Installing luigi configuration file: client.cfg"
+
+  mkdir -p /etc/luigi
 
   if [ ! -f "${PROVISION_FOLDER}/client.cfg" ]; then
     echo "Missing file ${PROVISION_FOLDER}/client.cfg ; aborting." 1>&2
     exit 1
   fi
 
- cat "$PROVISION_FOLDER/client.cfg" | sed -e "s~%CKAN_URL%~$CKAN_URL~"  -e "s~%API_KEY%~$API_KEY~" > /usr/lib/import/src/ke2mongo/ke2mongo/client.cfg
+  cat "$PROVISION_FOLDER/client.cfg" | sed -e "s~%LUIGI_ERROR_EMAIL%~$LUIGI_ERROR_EMAIL~"  -e "s~%LUIGI_EMAIL_SENDER%~$LUIGI_EMAIL_SENDER~" -e "s~%LUIGI_SMTP_HOST%~$LUIGI_SMTP_HOST~" > /etc/luigi/client.cfg
+
 }
 
 #
