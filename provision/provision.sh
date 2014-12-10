@@ -114,21 +114,17 @@ function provision_2(){
 #
 function provision_3(){
 
-  # Create virtual env
-
-
-  if [ ! -d /usr/lib/import ]; then
-    echo "Creating virtual environment"
-    mkdir -p /usr/lib/import
-    virtualenv /usr/lib/import
-  fi
-
   # Symlinks (Development only)
   if [ ${DEV_MODE} -eq 1 ]; then
     echo "Setting up symlinks"
     mkdir -p "${SYNCED_FOLDER}/lib"
-    ln -fs "${SYNCED_FOLDER}/lib" /usr/lib
+    ln -sf "${SYNCED_FOLDER}/lib" /usr/lib/import
   fi
+
+  # Create virtual env
+  echo "Creating virtual environment"
+  mkdir -p /usr/lib/import
+  virtualenv /usr/lib/import
 
 }
 
