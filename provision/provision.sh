@@ -2,7 +2,7 @@
 
 # Parameters
 PROVISION_FILE=/etc/import-provisioned
-PROVISION_COUNT=5 # Make sure to  update this when adding new updates!
+PROVISION_COUNT=7 # Make sure to update this when adding new updates!
 PROVISION_FOLDER=
 PROVISION_STEP=0
 
@@ -94,7 +94,7 @@ function provision_1(){
   # Install packages
   echo "Updating and installing packages"
   apt-get update
-  apt-get install -y python-dev python-pip python-virtualenv python-pastescript build-essential git-core libicu-dev libyaml-perl
+  apt-get install -y python-dev python-pip python-virtualenv python-pastescript build-essential git-core libicu-dev libyaml-perl supervisor
 }
 
 #
@@ -184,13 +184,23 @@ function provision_5(){
 }
 
 #
-# Initial provision, step 7: Set up logging
+# Initial provision, step 6: Set up logging
 #
 function provision_6(){
   echo "Setting up logs"
   sudo chmod 0777 /var/log
 }
 
+#
+# Initial provision, step 7: Install tornado
+#
+function provision_7(){
+  echo "Setting up tornado log"
+  mkdir /var/log/tornado
+  cp "$PROVISION_FOLDER/tornado-luigi.conf" /etc/supervisor/conf.d
+  supervisorctl reread
+  sudo supervisorctl update
+}
 
 #
 # Work out current version and apply the appropriate provisioning script.
@@ -210,6 +220,7 @@ elif [ "${PROVISION_VERSION}" -eq 0 ]; then
   provision_4
   provision_5
   provision_6
+  provision_7
   echo ${PROVISION_COUNT} > ${PROVISION_FILE}
 elif [ ${PROVISION_VERSION} -ge ${PROVISION_COUNT} ]; then
   echo "Server already provisioned"
