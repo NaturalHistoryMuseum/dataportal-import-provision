@@ -198,7 +198,7 @@ function provision_7(){
   echo "Setting up tornado log"
   mkdir /var/log/tornado
   cp "$PROVISION_FOLDER/tornado-luigi.conf" /etc/supervisor/conf.d
-  supervisorctl reread
+  sudo supervisorctl reread
   sudo supervisorctl update
 }
 
