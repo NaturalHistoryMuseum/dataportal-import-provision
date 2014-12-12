@@ -189,14 +189,15 @@ function provision_5(){
 function provision_6(){
   echo "Setting up logs"
   sudo chmod 0777 /var/log
+  mkdir /var/log/crontab
+  mkdir /var/log/tornado
 }
 
 #
 # Initial provision, step 7: Install tornado
 #
 function provision_7(){
-  echo "Setting up tornado log"
-  mkdir /var/log/tornado
+  echo "Setting up tornado"
   cp "$PROVISION_FOLDER/tornado-luigi.conf" /etc/supervisor/conf.d
   sudo supervisorctl reread
   sudo supervisorctl update
