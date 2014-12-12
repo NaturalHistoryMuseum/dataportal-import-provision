@@ -19,9 +19,9 @@ To run tasks using the scheduler, need to get the tornado server running:
 RUNNING
 -------
 
-Set up a cron to run every thursday morning (after the exports have run) 
+Set up a cron to run 3am friday morning - exports are delivered throughout Thursday, and if there's an error it can be fixed on Friday
 
-* * * * * /usr/lib/import/bin/python /usr/lib/import/src/ke2mongo/ke2mongo/tasks/cron.py >> /var/log/crontab/ke2mongo.log 2>&1
+0 03 * * 5 /usr/lib/import/bin/python /usr/lib/import/src/ke2mongo/ke2mongo/tasks/cron.py >> /var/log/crontab/ke2mongo.log 2>&1
 
 
 
