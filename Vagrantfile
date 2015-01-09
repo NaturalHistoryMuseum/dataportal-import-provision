@@ -24,7 +24,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   config.vm.hostname = VM_NAME
 
-  # This server should be on 10.11.12.15
+  # This server should be on 10.11.12.16
   config.vm.network :private_network, ip: VM_IP 
 
   # Update as needed for development needs
