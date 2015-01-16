@@ -2,7 +2,7 @@
 
 # Parameters
 PROVISION_FILE=/etc/import-provisioned
-PROVISION_COUNT=7 # Make sure to update this when adding new updates!
+PROVISION_COUNT=8 # Make sure to update this when adding new updates!
 PROVISION_FOLDER=
 PROVISION_STEP=0
 
@@ -231,6 +231,7 @@ elif [ "${PROVISION_VERSION}" -eq 0 ]; then
   provision_5
   provision_6
   provision_7
+  provision_8
   echo ${PROVISION_COUNT} > ${PROVISION_FILE}
 elif [ ${PROVISION_VERSION} -ge ${PROVISION_COUNT} ]; then
   echo "Server already provisioned"
