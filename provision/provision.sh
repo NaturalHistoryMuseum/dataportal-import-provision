@@ -204,6 +204,15 @@ function provision_7(){
 }
 
 #
+# Initial provision, step 8: Aliases
+#
+function provision_8(){
+  echo "Aliasing commands"
+  echo "alias activate='. /usr/lib/import/bin/activate'" >> ~/.bash_aliases
+  echo "alias src='cd /usr/lib/import/src/'" >> ~/.bash_aliases
+}
+
+#
 # Work out current version and apply the appropriate provisioning script.
 # Note that this script has 5 initial steps, rather than 1.
 #
