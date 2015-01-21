@@ -10,7 +10,7 @@
 
 # VM Specific parameters
 VM_NAME = 'ckan-import-server'
-VM_MEMORY_LIMIT = "8192"
+VM_MEMORY_LIMIT = "4096"
 VM_CPU_LIMIT = "100"
 VM_IP = "10.11.12.16"
 
