@@ -94,7 +94,7 @@ function provision_1(){
   # Install packages
   echo "Updating and installing packages"
   apt-get update
-  apt-get install -y python-dev python-pip python-virtualenv python-pastescript build-essential git-core libicu-dev libyaml-perl supervisor
+  apt-get install -y python-dev python-pip python-virtualenv python-pastescript build-essential git-core libicu-dev libyaml-perl mercurial supervisor gcc automake autoconf libtool libsasl2-2 libsasl2-dev
 }
 
 #
@@ -133,10 +133,23 @@ function provision_3(){
 
 }
 
+
+# Step 4; Install mongo C driver
+# https://github.com/mongodb/mongo-c-driver
+
+function provision_4(){
+  cd /tmp
+  wget https://github.com/mongodb/mongo-c-driver/releases/download/1.1.7/mongo-c-driver-1.1.7.tar.gz
+  tar xzf mongo-c-driver-1.1.7.tar.gz
+  cd mongo-c-driver-1.1.7
+  ./configure --enable-sasl=yes  --enable-ssl=yes
+  make && make install
+}
+
 #
 # Initial provision, step 4: Install KE2Mongo extension and requirements.
 #
-function provision_4(){
+function provision_5(){
   if [ ! -f "${PROVISION_FOLDER}/client.cfg" ]; then
     echo "Missing file ${PROVISION_FOLDER}/client.cfg ; aborting." 1>&2
     exit 1
@@ -159,7 +172,7 @@ function provision_4(){
 #
 # Initial provision, step 5: Update and copy across the KE EMu and Luigi config files
 #
-function provision_5(){
+function provision_6(){
 
   echo "Installing ke2mongo configuration file: config.cfg"
 
@@ -186,7 +199,7 @@ function provision_5(){
 #
 # Initial provision, step 6: Set up logging
 #
-function provision_6(){
+function provision_7(){
   echo "Setting up logs"
   sudo chmod 0777 /var/log
   mkdir /var/log/crontab
@@ -196,7 +209,7 @@ function provision_6(){
 #
 # Initial provision, step 7: Install tornado
 #
-function provision_7(){
+function provision_8(){
   echo "Setting up tornado"
   cp "$PROVISION_FOLDER/tornado-luigi.conf" /etc/supervisor/conf.d
   sudo supervisorctl reread
@@ -206,7 +219,7 @@ function provision_7(){
 #
 # Initial provision, step 8: Aliases
 #
-function provision_8(){
+function provision_9(){
   echo "Aliasing commands"
   echo "alias activate='. /usr/lib/import/bin/activate'" >> ~/.bash_aliases
   echo "alias src='cd /usr/lib/import/src/'" >> ~/.bash_aliases
@@ -232,6 +245,7 @@ elif [ "${PROVISION_VERSION}" -eq 0 ]; then
   provision_6
   provision_7
   provision_8
+  provision_9
   echo ${PROVISION_COUNT} > ${PROVISION_FILE}
 elif [ ${PROVISION_VERSION} -ge ${PROVISION_COUNT} ]; then
   echo "Server already provisioned"
