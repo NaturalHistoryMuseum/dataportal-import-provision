@@ -94,30 +94,13 @@ function provision_1(){
   # Install packages
   echo "Updating and installing packages"
   apt-get update
-  apt-get install -y python-dev python-pip python-virtualenv python-pastescript build-essential git-core libicu-dev libyaml-perl mercurial supervisor gcc automake autoconf libtool libsasl2-2 libsasl2-dev
+  apt-get install -y python-pip python-virtualenv python-pastescript build-essential git-core libicu-dev libyaml-perl supervisor mercurial libsasl2-2 libsasl2-dev make
 }
 
-#
-# Step 2; Install Mongo DB
-#
-function provision_2(){
-  # Install mongodb
-  echo "Installing Mongo DB"
-  # We want latest version for the aggregate functions, so we need the 10 gen distro
-  # Add key
-  sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10
-  # Create list file
-  echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | sudo tee /etc/apt/sources.list.d/mongodb.list
-  # Update packages
-  sudo apt-get update
-  # And install
-  sudo apt-get install -y mongodb-org
-}
 
-#
 # Step 3; Install virtual env and pip libs
-#
-function provision_3(){
+
+function provision_2(){
 
   # Symlinks (Development only)
   if [ ${DEV_MODE} -eq 1 ]; then
@@ -136,8 +119,7 @@ function provision_3(){
 
 # Step 4; Install mongo C driver
 # https://github.com/mongodb/mongo-c-driver
-
-function provision_4(){
+function provision_3(){
   cd /tmp
   wget https://github.com/mongodb/mongo-c-driver/releases/download/1.1.7/mongo-c-driver-1.1.7.tar.gz
   tar xzf mongo-c-driver-1.1.7.tar.gz
@@ -146,10 +128,37 @@ function provision_4(){
   make && make install
 }
 
+# # Step 4; Install monary
+function provision_4(){
+  . /usr/lib/import/bin/activate
+  mkdir /usr/lib/import/src
+  hg clone https://@bitbucket.org/djcbeach/monary /usr/lib/import/src/monary
+  cd /usr/lib/import/src/monary
+  apt-get install -y python-dev 
+  python setup.py install
+}
+
+#
+# Step 2; Install Mongo DB
+#
+function provision_5(){
+  # Install mongodb
+  echo "Installing Mongo DB"
+  # We want latest version for the aggregate functions, so we need the 10 gen distro
+  # Add key
+  apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10
+  # Create list file
+  echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | sudo tee /etc/apt/sources.list.d/mongodb.list
+  # Update packages
+  apt-get update
+  # And install
+  apt-get install -y mongodb-org
+}
+
 #
 # Initial provision, step 4: Install KE2Mongo extension and requirements.
 #
-function provision_5(){
+function provision_6(){
   if [ ! -f "${PROVISION_FOLDER}/client.cfg" ]; then
     echo "Missing file ${PROVISION_FOLDER}/client.cfg ; aborting." 1>&2
     exit 1
@@ -172,29 +181,29 @@ function provision_5(){
 #
 # Initial provision, step 5: Update and copy across the KE EMu and Luigi config files
 #
-function provision_6(){
-
-  echo "Installing ke2mongo configuration file: config.cfg"
-
-  if [ ! -f "${PROVISION_FOLDER}/config.cfg" ]; then
-    echo "Missing file ${PROVISION_FOLDER}/config.cfg ; aborting." 1>&2
-    exit 1
-  fi
-
-  cat "$PROVISION_FOLDER/config.cfg" | sed -e "s~%CKAN_URL%~$CKAN_URL~"  -e "s~%API_KEY%~$API_KEY~" > /usr/lib/import/src/ke2mongo/ke2mongo/config.cfg
-
-  echo "Installing luigi configuration file: client.cfg"
-
-  mkdir -p /etc/luigi
-
-  if [ ! -f "${PROVISION_FOLDER}/client.cfg" ]; then
-    echo "Missing file ${PROVISION_FOLDER}/client.cfg ; aborting." 1>&2
-    exit 1
-  fi
-
-  cat "$PROVISION_FOLDER/client.cfg" | sed -e "s~%LUIGI_ERROR_EMAIL%~$LUIGI_ERROR_EMAIL~"  -e "s~%LUIGI_EMAIL_SENDER%~$LUIGI_EMAIL_SENDER~" -e "s~%LUIGI_SMTP_HOST%~$LUIGI_SMTP_HOST~" > /etc/luigi/client.cfg
-
-}
+# function provision_6(){
+#
+#   echo "Installing ke2mongo configuration file: config.cfg"
+#
+#   if [ ! -f "${PROVISION_FOLDER}/config.cfg" ]; then
+#     echo "Missing file ${PROVISION_FOLDER}/config.cfg ; aborting." 1>&2
+#     exit 1
+#   fi
+#
+#   cat "$PROVISION_FOLDER/config.cfg" | sed -e "s~%CKAN_URL%~$CKAN_URL~"  -e "s~%API_KEY%~$API_KEY~" > /usr/lib/import/src/ke2mongo/ke2mongo/config.cfg
+#
+#   echo "Installing luigi configuration file: client.cfg"
+#
+#   mkdir -p /etc/luigi
+#
+#   if [ ! -f "${PROVISION_FOLDER}/client.cfg" ]; then
+#     echo "Missing file ${PROVISION_FOLDER}/client.cfg ; aborting." 1>&2
+#     exit 1
+#   fi
+#
+#   cat "$PROVISION_FOLDER/client.cfg" | sed -e "s~%LUIGI_ERROR_EMAIL%~$LUIGI_ERROR_EMAIL~"  -e "s~%LUIGI_EMAIL_SENDER%~$LUIGI_EMAIL_SENDER~" -e "s~%LUIGI_SMTP_HOST%~$LUIGI_SMTP_HOST~" > /etc/luigi/client.cfg
+#
+# }
 
 #
 # Initial provision, step 6: Set up logging
@@ -204,26 +213,27 @@ function provision_7(){
   sudo chmod 0777 /var/log
   mkdir /var/log/crontab
   mkdir /var/log/tornado
+  mkdir /var/log/import
 }
 
 #
 # Initial provision, step 7: Install tornado
 #
-function provision_8(){
-  echo "Setting up tornado"
-  cp "$PROVISION_FOLDER/tornado-luigi.conf" /etc/supervisor/conf.d
-  sudo supervisorctl reread
-  sudo supervisorctl update
-}
-
+# function provision_8(){
+#   echo "Setting up tornado"
+#   cp "$PROVISION_FOLDER/tornado-luigi.conf" /etc/supervisor/conf.d
+#   sudo supervisorctl reread
+#   sudo supervisorctl update
+# }
 #
-# Initial provision, step 8: Aliases
-#
-function provision_9(){
-  echo "Aliasing commands"
-  echo "alias activate='. /usr/lib/import/bin/activate'" >> ~/.bash_aliases
-  echo "alias src='cd /usr/lib/import/src/'" >> ~/.bash_aliases
-}
+# #
+# # Initial provision, step 8: Aliases
+# #
+# function provision_9(){
+#   echo "Aliasing commands"
+#   echo "alias activate='. /usr/lib/import/bin/activate'" >> ~/.bash_aliases
+#   echo "alias src='cd /usr/lib/import/src/'" >> ~/.bash_aliases
+# }
 
 #
 # Work out current version and apply the appropriate provisioning script.

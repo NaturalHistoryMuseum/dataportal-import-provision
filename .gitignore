@@ -7,3 +7,6 @@
 /dataportal-import-provision/.vagrant
 /exports
 .vagrant
+/src
+.virtualenv
+.idea
