@@ -94,7 +94,7 @@ function provision_1(){
   # Install packages
   echo "Updating and installing packages"
   apt-get update
-  apt-get install -y python-pip python-virtualenv python-pastescript build-essential git-core libicu-dev libyaml-perl supervisor mercurial
+  apt-get install -y python-pip python-virtualenv python-dev python-pastescript build-essential git-core libicu-dev libyaml-perl supervisor mercurial 
 }
 
 
@@ -116,101 +116,76 @@ function provision_2(){
 
 }
 
-
-# Step 4; Install mongo C driver
-# https://github.com/mongodb/mongo-c-driver
-# function provision_3(){
-#   cd /tmp
-#   wget https://github.com/mongodb/mongo-c-driver/releases/download/1.1.7/mongo-c-driver-1.1.7.tar.gz
-#   tar xzf mongo-c-driver-1.1.7.tar.gz
-#   cd mongo-c-driver-1.1.7
-#   ./configure --enable-sasl=yes  --enable-ssl=yes
-#   make && make install
-# }
-#
-# # # Step 4; Install monary
-# function provision_4(){
-#   . /usr/lib/import/bin/activate
-#   mkdir /usr/lib/import/src
-#   hg clone https://@bitbucket.org/djcbeach/monary /usr/lib/import/src/monary
-#   cd /usr/lib/import/src/monary
-#   apt-get install -y python-dev
-#   python setup.py install
-# }
+# Step 3; Install monary
+function provision_3(){
+  . /usr/lib/import/bin/activate
+  mkdir /usr/lib/import/src
+  hg clone https://@bitbucket.org/djcbeach/monary /usr/lib/import/src/monary
+  cd /usr/lib/import/src/monary
+  hg pull && hg update monary-0.2.3
+  python setup.py install
+}
 
 #
 # Step 2; Install Mongo DB
 #
-# function provision_5(){
-#   # Install mongodb
-#   echo "Installing Mongo DB"
-#   # We want latest version for the aggregate functions, so we need the 10 gen distro
-#   # Add key
-#   apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10
-#   # Create list file
-#   echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | sudo tee /etc/apt/sources.list.d/mongodb.list
-#   # Update packages
-#   apt-get update
-#   # And install
-#   apt-get install -y mongodb-org
-# }
+function provision_4(){
+  # Install mongodb
+  echo "Installing Mongo DB"
+  # We want latest version for the aggregate functions, so we need the 10 gen distro
+  # Add key
+  apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10
+  # Create list file
+  echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | sudo tee /etc/apt/sources.list.d/mongodb.list
+  # Update packages
+  apt-get update
+  # And install
+  apt-get install -y mongodb-org
+}
 
 #
-# Initial provision, step 4: Install KE2Mongo extension and requirements.
+# Initial provision, step 5: Install KE2Mongo extension and requirements.
 #
-# function provision_6(){
-#   if [ ! -f "${PROVISION_FOLDER}/client.cfg" ]; then
-#     echo "Missing file ${PROVISION_FOLDER}/client.cfg ; aborting." 1>&2
-#     exit 1
-#   fi
-#
-#   cd /usr/lib/import
-#
-#
-#   pip install -e 'git+https://github.com/NaturalHistoryMuseum/ke2mongo.git#egg=ke2mongo'
-#
-#   if [ $? -ne 0 ]; then
-#     echo "Failed installing ke2mongo ; aborting" 1>&2
-#     exit 1
-#   fi
-#
-#   echo "Install KE2Mongo requirements"
-#   pip_install_req /usr/lib/import/src/ke2mongo/requirements.txt
-# }
+function provision_5(){
+  if [ ! -f "${PROVISION_FOLDER}/client.cfg" ]; then
+    echo "Missing file ${PROVISION_FOLDER}/client.cfg ; aborting." 1>&2
+    exit 1
+  fi
+  cd /usr/lib/import
+  pip install -e 'git+https://github.com/NaturalHistoryMuseum/ke2mongo.git#egg=ke2mongo'
+  if [ $? -ne 0 ]; then
+    echo "Failed installing ke2mongo ; aborting" 1>&2
+    exit 1
+  fi
+  echo "Install KE2Mongo requirements"
+  pip_install_req /usr/lib/import/src/ke2mongo/requirements.txt
+}
 
 #
-# Initial provision, step 5: Update and copy across the KE EMu and Luigi config files
+# Initial provision, step 6: Update and copy across the KE EMu and Luigi config files
 #
-# function provision_6(){
-#
-#   echo "Installing ke2mongo configuration file: config.cfg"
-#
-#   if [ ! -f "${PROVISION_FOLDER}/config.cfg" ]; then
-#     echo "Missing file ${PROVISION_FOLDER}/config.cfg ; aborting." 1>&2
-#     exit 1
-#   fi
-#
-#   cat "$PROVISION_FOLDER/config.cfg" | sed -e "s~%CKAN_URL%~$CKAN_URL~"  -e "s~%API_KEY%~$API_KEY~" > /usr/lib/import/src/ke2mongo/ke2mongo/config.cfg
-#
-#   echo "Installing luigi configuration file: client.cfg"
-#
-#   mkdir -p /etc/luigi
-#
-#   if [ ! -f "${PROVISION_FOLDER}/client.cfg" ]; then
-#     echo "Missing file ${PROVISION_FOLDER}/client.cfg ; aborting." 1>&2
-#     exit 1
-#   fi
-#
-#   cat "$PROVISION_FOLDER/client.cfg" | sed -e "s~%LUIGI_ERROR_EMAIL%~$LUIGI_ERROR_EMAIL~"  -e "s~%LUIGI_EMAIL_SENDER%~$LUIGI_EMAIL_SENDER~" -e "s~%LUIGI_SMTP_HOST%~$LUIGI_SMTP_HOST~" > /etc/luigi/client.cfg
-#
-# }
+function provision_6(){
+  echo "Installing ke2mongo configuration file: config.cfg"
+  if [ ! -f "${PROVISION_FOLDER}/config.cfg" ]; then
+    echo "Missing file ${PROVISION_FOLDER}/config.cfg ; aborting." 1>&2
+    exit 1
+  fi
+  cat "$PROVISION_FOLDER/config.cfg" | sed -e "s~%CKAN_URL%~$CKAN_URL~"  -e "s~%API_KEY%~$API_KEY~" > /usr/lib/import/src/ke2mongo/ke2mongo/config.cfg
+  echo "Installing luigi configuration file: client.cfg"
+  mkdir -p /etc/luigi
+  if [ ! -f "${PROVISION_FOLDER}/client.cfg" ]; then
+    echo "Missing file ${PROVISION_FOLDER}/client.cfg ; aborting." 1>&2
+    exit 1
+  fi
+  cat "$PROVISION_FOLDER/client.cfg" | sed -e "s~%LUIGI_ERROR_EMAIL%~$LUIGI_ERROR_EMAIL~"  -e "s~%LUIGI_EMAIL_SENDER%~$LUIGI_EMAIL_SENDER~" -e "s~%LUIGI_SMTP_HOST%~$LUIGI_SMTP_HOST~" > /etc/luigi/client.cfg
+}
 
 #
 # Initial provision, step 6: Set up logging
 #
 function provision_7(){
   echo "Setting up logs"
-  sudo chmod 0777 /var/log
+  sudo chmod 0777 -R /var/log
   mkdir /var/log/crontab
   mkdir /var/log/tornado
   mkdir /var/log/import
