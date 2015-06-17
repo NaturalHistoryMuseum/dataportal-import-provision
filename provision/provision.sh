@@ -122,6 +122,7 @@ function provision_3(){
   mkdir /usr/lib/import/src
   hg clone https://@bitbucket.org/djcbeach/monary /usr/lib/import/src/monary
   cd /usr/lib/import/src/monary
+  # Note - this doesn't work with the latest version of monary (0.4.0 in pypi)
   hg pull && hg update monary-0.2.3
   python setup.py install
 }
