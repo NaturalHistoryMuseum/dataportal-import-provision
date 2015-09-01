@@ -5,7 +5,7 @@
 # of the NHM data portal. It provisions in a single VM:
 # - The database server (postgres) ;
 # - The Solr server ;
-# - The application server (Ckan + extentions).
+# - The application server (CKAN + extentions).
 
 
 # VM Specific parameters
