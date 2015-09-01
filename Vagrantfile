@@ -25,7 +25,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.hostname = VM_NAME
 
   # This server should be on 10.11.12.16
-  config.vm.network :private_network, ip: VM_IP 
+  config.vm.network :private_network, ip: VM_IP
+  config.vm.synced_folder "./src", "/usr/lib/import/src", :nfs => true
 
   # Update as needed for development needs
   config.vm.provider :virtualbox do |vb|

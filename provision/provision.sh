@@ -193,7 +193,7 @@ function provision_7(){
 }
 
 #
-# Initial provision, step 7: Install tornado
+# Initial provision, step 8: Install tornado
 #
 # function provision_8(){
 #   echo "Setting up tornado"
@@ -202,14 +202,14 @@ function provision_7(){
 #   sudo supervisorctl update
 # }
 #
-# #
-# # Initial provision, step 8: Aliases
-# #
-# function provision_9(){
-#   echo "Aliasing commands"
-#   echo "alias activate='. /usr/lib/import/bin/activate'" >> ~/.bash_aliases
-#   echo "alias src='cd /usr/lib/import/src/'" >> ~/.bash_aliases
-# }
+
+#
+# Initial provision, step 9: Set up bash login
+#
+function provision_9(){
+echo "Creating bash login $PROVISION_FOLDER"
+    cp "$PROVISION_FOLDER/.bash_login" /home/vagrant/
+}
 
 #
 # Work out current version and apply the appropriate provisioning script.
