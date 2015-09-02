@@ -2,11 +2,11 @@
 
 # Parameters
 PROVISION_FILE=/etc/import-provisioned
-PROVISION_COUNT=8 # Make sure to update this when adding new updates!
+PROVISION_COUNT=9 # Make sure to update this when adding new updates!
 PROVISION_FOLDER=
 PROVISION_STEP=0
 
-DEV_MODE=0
+DEV_MODE=1
 SYNCED_FOLDER=/vagrant
 CKAN_URL=
 API_KEY=
@@ -122,6 +122,10 @@ function provision_3(){
   mkdir /usr/lib/import/src
   hg clone https://@bitbucket.org/djcbeach/monary /usr/lib/import/src/monary
   cd /usr/lib/import/src/monary
+
+  # Add trusted user
+  echo -e "[trusted]\nusers = 1797455785" >> /etc/mercurial/hgrc
+
   # Note - this doesn't work with the latest version of monary (0.4.0 in pypi)
   hg pull && hg update monary-0.2.3
   python setup.py install
@@ -230,7 +234,7 @@ elif [ "${PROVISION_VERSION}" -eq 0 ]; then
   provision_5
   provision_6
   provision_7
-  provision_8
+#  provision_8
   provision_9
   echo ${PROVISION_COUNT} > ${PROVISION_FILE}
 elif [ ${PROVISION_VERSION} -ge ${PROVISION_COUNT} ]; then
