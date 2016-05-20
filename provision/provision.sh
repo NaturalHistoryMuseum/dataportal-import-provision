@@ -8,7 +8,7 @@ PROVISION_STEP=0
 
 DEV_MODE=1
 SYNCED_FOLDER=/vagrant
-CKAN_URL=
+CKAN_URL=127.0.0.1:8000
 API_KEY=
 
 
@@ -69,23 +69,6 @@ if [ "${PROVISION_FOLDER}" = "" ]; then
   PROVISION_FOLDER="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 fi
 
-#
-# pip_install_req function ; takes one parameter as a
-# path to a requirements.txt file.
-#
-function pip_install_req(){
-  RETURN_STATUS=0
-  for i in {1..3}; do
-    pip --timeout=30 --exists-action=i install -r $1
-    RETURN_STATUS=$?
-    [ ${RETURN_STATUS} -eq 0 ] && break
-  done
-  if [ ${RETURN_STATUS} -ne 0 ]; then
-    echo "Failed installing requirements ; aborting" 1>&2
-    exit 1
-  fi
-}
-
 
 #
 # Initial provision, step 1: install required packages
@@ -94,7 +77,7 @@ function provision_1(){
   # Install packages
   echo "Updating and installing packages"
   apt-get update
-  apt-get install -y python-pip python-virtualenv python-dev python-pastescript build-essential git-core libicu-dev libyaml-perl supervisor mercurial 
+  apt-get install -y python-pip python-virtualenv python-dev python-pastescript build-essential git-core libicu-dev libyaml-perl supervisor pkg-config libssl-dev libsasl2-dev make mercurial
 }
 
 
@@ -102,39 +85,59 @@ function provision_1(){
 
 function provision_2(){
 
-  # Symlinks (Development only)
-  if [ ${DEV_MODE} -eq 1 ]; then
-    echo "Setting up symlinks"
-    mkdir -p "${SYNCED_FOLDER}/lib"
-    ln -sf "${SYNCED_FOLDER}/lib" /usr/lib/import
-  fi
-
-  # Create virtual env
-  echo "Creating virtual environment"
-  mkdir -p /usr/lib/import
-  virtualenv /usr/lib/import
-
+    # Create virtual env
+    echo "Creating virtual environment"
+    mkdir -p "${SYNCED_FOLDER}/opt/import"
+    virtualenv "${SYNCED_FOLDER}/opt/import"
+    chown -R vagrant:vagrant "${SYNCED_FOLDER}/opt/import"
 }
 
 # Step 3; Install monary
 function provision_3(){
-  . /usr/lib/import/bin/activate
-  mkdir /usr/lib/import/src
-  hg clone https://@bitbucket.org/djcbeach/monary /usr/lib/import/src/monary
-  cd /usr/lib/import/src/monary
+    wget https://github.com/mongodb/mongo-c-driver/releases/download/1.3.0/mongo-c-driver-1.3.0.tar.gz -P /tmp
+    cd /tmp/
+    tar xzf mongo-c-driver-1.3.0.tar.gz
+    cd mongo-c-driver-1.3.0
+    ./configure --enable-sasl=yes --enable-ssl=yes
+    make
+    make install
 
-  # Add trusted user
-  echo -e "[trusted]\nusers = 1797455785" >> /etc/mercurial/hgrc
+    source "${SYNCED_FOLDER}/opt/import/bin/activate"
 
-  # Note - this doesn't work with the latest version of monary (0.4.0 in pypi)
-  hg pull && hg update monary-0.2.3
-  python setup.py install
+    hg clone https://@bitbucket.org/djcbeach/monary "${SYNCED_FOLDER}/opt/import/src/monary"
+    cd "${SYNCED_FOLDER}/opt/import/src/monary"
+
+    # Add trusted user
+    echo -e "[trusted]\nusers = 1797455785\ngroups=vagrant" >> /etc/mercurial/hgrc
+
+    # Note - this doesn't work with the latest version of monary (0.4.0 in pypi)
+    hg pull && hg update monary-0.2.3
+    python setup.py install
+
+}
+
+#
+# Initial provision, step 5: Install KE2Mongo extension and requirements.
+#
+function provision_4(){
+  if [ ! -f "${PROVISION_FOLDER}/client.cfg" ]; then
+    echo "Missing file ${PROVISION_FOLDER}/client.cfg ; aborting." 1>&2
+    exit 1
+  fi
+  cd "${SYNCED_FOLDER}/opt/import"
+  pip install -e 'git+https://github.com/NaturalHistoryMuseum/ke2mongo.git#egg=ke2mongo'
+  if [ $? -ne 0 ]; then
+    echo "Failed installing ke2mongo ; aborting" 1>&2
+    exit 1
+  fi
+  echo "Install KE2Mongo requirements"
+  pip install -r "${SYNCED_FOLDER}/opt/import/src/ke2mongo/requirements.txt"
 }
 
 #
 # Step 2; Install Mongo DB
 #
-function provision_4(){
+function provision_5(){
   # Install mongodb
   echo "Installing Mongo DB"
   # We want latest version for the aggregate functions, so we need the 10 gen distro
@@ -148,23 +151,6 @@ function provision_4(){
   apt-get install -y mongodb-org
 }
 
-#
-# Initial provision, step 5: Install KE2Mongo extension and requirements.
-#
-function provision_5(){
-  if [ ! -f "${PROVISION_FOLDER}/client.cfg" ]; then
-    echo "Missing file ${PROVISION_FOLDER}/client.cfg ; aborting." 1>&2
-    exit 1
-  fi
-  cd /usr/lib/import
-  pip install -e 'git+https://github.com/NaturalHistoryMuseum/ke2mongo.git#egg=ke2mongo'
-  if [ $? -ne 0 ]; then
-    echo "Failed installing ke2mongo ; aborting" 1>&2
-    exit 1
-  fi
-  echo "Install KE2Mongo requirements"
-  pip_install_req /usr/lib/import/src/ke2mongo/requirements.txt
-}
 
 #
 # Initial provision, step 6: Update and copy across the KE EMu and Luigi config files
@@ -175,7 +161,8 @@ function provision_6(){
     echo "Missing file ${PROVISION_FOLDER}/config.cfg ; aborting." 1>&2
     exit 1
   fi
-  cat "$PROVISION_FOLDER/config.cfg" | sed -e "s~%CKAN_URL%~$CKAN_URL~"  -e "s~%API_KEY%~$API_KEY~" > /usr/lib/import/src/ke2mongo/ke2mongo/config.cfg
+
+  cat "$PROVISION_FOLDER/config.cfg" | sed -e "s~%CKAN_URL%~$CKAN_URL~"  -e "s~%API_KEY%~$API_KEY~" > "${SYNCED_FOLDER}/opt/import/src/ke2mongo/ke2mongo/config.cfg"
   echo "Installing luigi configuration file: client.cfg"
   mkdir -p /etc/luigi
   if [ ! -f "${PROVISION_FOLDER}/client.cfg" ]; then
@@ -188,32 +175,32 @@ function provision_6(){
 #
 # Initial provision, step 6: Set up logging
 #
-function provision_7(){
-  echo "Setting up logs"
-  sudo chmod 0777 -R /var/log
-  mkdir /var/log/crontab
-  mkdir /var/log/tornado
-  mkdir /var/log/import
-}
-
+#function provision_7(){
+#  echo "Setting up logs"
+#  sudo chmod 0777 -R /var/log
+#  mkdir /var/log/crontab
+#  mkdir /var/log/tornado
+#  mkdir /var/log/import
+#}
 #
-# Initial provision, step 8: Install tornado
 #
-# function provision_8(){
+#function provision_8(){
 #   echo "Setting up tornado"
 #   cp "$PROVISION_FOLDER/tornado-luigi.conf" /etc/supervisor/conf.d
 #   sudo supervisorctl reread
 #   sudo supervisorctl update
 # }
-#
+
 
 #
 # Initial provision, step 9: Set up bash login
 #
 function provision_9(){
-echo "Creating bash login $PROVISION_FOLDER"
-    cp "$PROVISION_FOLDER/.bash_login" /home/vagrant/
+  echo "Creating bash login $PROVISION_FOLDER"
+  cat "${PROVISION_FOLDER}/.bash_login" | sed -e "s~%SYNCED_FOLDER%~$SYNCED_FOLDER~" > "/home/vagrant/.bash_login"
 }
+
+
 
 #
 # Work out current version and apply the appropriate provisioning script.
@@ -227,15 +214,16 @@ fi
 if [ "${PROVISION_STEP}" -ne 0 ]; then
   eval "provision_${PROVISION_STEP}"
 elif [ "${PROVISION_VERSION}" -eq 0 ]; then
-  provision_1
-  provision_2
-  provision_3
-  provision_4
-  provision_5
-  provision_6
-  provision_7
+#  provision_1
+#  provision_2
+#  provision_3
+#  provision_4
+#  provision_5
+#  provision_6
+#  provision_7
 #  provision_8
   provision_9
+
   echo ${PROVISION_COUNT} > ${PROVISION_FILE}
 elif [ ${PROVISION_VERSION} -ge ${PROVISION_COUNT} ]; then
   echo "Server already provisioned"

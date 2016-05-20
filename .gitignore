@@ -2,11 +2,11 @@
 /provision/datastore.sql
 
 # This folders are created when deploying a Vagrant VM
-/etc/
-/lib/
-/dataportal-import-provision/.vagrant
-/exports
+
+
 .vagrant
-/src
+/exports/*
+.vagrant
+/opt
 .virtualenv
 .idea
