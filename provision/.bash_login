@@ -1,2 +1,2 @@
-. %SYNCED_FOLDER%/import/bin/activate
-cd %SYNCED_FOLDER%/import
+. %SYNCED_FOLDER%/opt/import/bin/activate
+cd %SYNCED_FOLDER%/opt/import
