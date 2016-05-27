@@ -13,7 +13,13 @@ RUNNING
 
 Set up a cron to run 3am friday morning - exports are delivered throughout Thursday, and if there's an error it can be fixed on Friday
 
-0 03 * * 5 /usr/lib/import/bin/python /usr/lib/import/src/ke2mongo/ke2mongo/tasks/cron.py >> /var/log/crontab/ke2mongo.log 2>&1
+0 03 * * 5 /usr/lib/import/bin/python /usr/lib/import/src/ke2mongo/ke2mongo/run.py >> /var/log/crontab/ke2mongo.log 2>&1
+
+The main file is run.py.
+
+python run.py -l
+
+Otherwise, will need the tornado scheduler.
 
 
 SCHEDULER
